@@ -1,4 +1,4 @@
-# Cobi
+# Cobi (mdf2sqlite)
 
 ## Quick overview
 
@@ -12,7 +12,7 @@
 
 ## Quickstart
 ```bash
-git clone
+git clone https://github.com/Gelma/mdf2sqlite.git
 cd cobi
 make
 # or: cargo build
