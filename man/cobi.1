@@ -1,0 +1,198 @@
+.TH COBI 1 "October 2026" "cobi 0.1.0" "User Commands"
+.SH NAME
+cobi \- standalone offline Microsoft SQL Server (.mdf) to SQLite3 converter
+.SH SYNOPSIS
+.B cobi
+.I source_dir_or_mdf
+.RI [ dest_dir_or_sqlite ]
+.RB [ \-j | \-\-jobs
+.IR N ]
+.RB [ \-\-no\-recursive ]
+.RB [ \-\-indexes\-only ]
+.br
+.B cobi
+.BR \-h | \-\-help
+.SH DESCRIPTION
+.B cobi
+is a standalone, cross-platform command-line utility written in Rust that reads
+Microsoft SQL Server primary database files
+.RB ( .mdf )
+directly at the binary page level without requiring a running SQL Server engine,
+and converts them into self-contained
+.B SQLite3
+.RB ( .sqlite3 )
+databases.
+.PP
+Behavior depends on whether
+.I source_dir_or_mdf
+is a single file or a directory:
+.IP \(bu 2
+.B Single SQL Server file mode:
+If
+.I source_dir_or_mdf
+points to a single
+.B .mdf
+file,
+.B cobi
+converts only that file. If
+.I dest_dir_or_sqlite
+is a file path (e.g. ending in
+.BR .sqlite3 ,
+.BR .sqlite ,
+or
+.BR .db ),
+the output is written directly to that file; if it is a directory (or omitted),
+the output is written to
+.IR <dest_dir>/<stem>.sqlite3 .
+.IP \(bu 2
+.B Directory mode:
+If
+.I source_dir_or_mdf
+points to a directory,
+.B cobi
+recursively discovers all
+.B .mdf
+(case-insensitive) files inside the directory tree and converts them in parallel
+into
+.IR dest_dir_or_sqlite ,
+preserving the relative subdirectory structure.
+.PP
+By default and automatically,
+.B cobi
+extracts and migrates:
+.IP 1. 4
+.B User Table Schemas
+.RB ( "CREATE TABLE" ),
+mapping SQL Server data types to their corresponding SQLite3 affinities.
+.IP 2. 4
+.B Foreign Key Constraints
+.RB ( "CONSTRAINT ... FOREIGN KEY (...) REFERENCES ... [ON DELETE ...] [ON UPDATE ...]" ),
+reconstructed offline from
+.IR sys.sysschobjs ,
+.IR sys.syssingleobjrefs ,
+and
+.IR sys.sysmultiobjrefs .
+.IP 3. 4
+.B All Table Rows & Out-of-Row LOBs
+(including Heap tables, Clustered B-Trees, Forwarded Records, Sparse Vectors,
+Row-Overflow data, and
+.IR TEXT / NTEXT / IMAGE / VARCHAR(MAX) / NVARCHAR(MAX) / VARBINARY(MAX) / XML
+LOB trees), automatically transcoding all
+.B UTF-16LE
+and Windows Collation codepage strings into valid
+.BR UTF-8 .
+.IP 4. 4
+.B Clustered & Non-Clustered Indexes
+.RB ( "CREATE UNIQUE INDEX" " / " "CREATE INDEX" ),
+reconstructed offline from
+.I sys.sysidxstats
+and
+.IR sys.siscols ,
+preserving uniqueness flags, key column order, and
+.BR ASC / DESC
+sort direction.
+.PP
+Every output
+.B .sqlite3
+database is opened and populated in
+.B WAL (Write-Ahead Logging)
+mode
+.RB ( "PRAGMA journal_mode = WAL; PRAGMA locking_mode = NORMAL;" )
+with an immediate schema commit and incremental batch commits (every 50,000 rows
+and at the end of each table) so that other processes can query the SQLite3
+databases concurrently even while they are still being populated.
+.SH OPTIONS
+.TP
+.I source_dir_or_mdf
+Path to either a single SQL Server
+.B .mdf
+file or a directory containing one or more
+.B .mdf
+files. Opened strictly in read-only mode.
+.TP
+.I dest_dir_or_sqlite
+Destination directory for converted
+.B .sqlite3
+databases, or destination file path when converting a single
+.B .mdf
+file. Defaults to
+.I ./<stem>.sqlite3
+for a single source file or
+.I ./output_sqlite
+for a source directory.
+.TP
+.BR \-j ", " \-\-jobs " " \fIN\fR
+Number of parallel worker threads used when converting a directory of
+.B .mdf
+files. Defaults to the number of logical CPU cores available on the system.
+.TP
+.B \-\-no\-recursive
+When
+.I source_dir_or_mdf
+is a directory, scan only its top-level entries instead of recursing into
+subdirectories.
+.TP
+.B \-\-indexes\-only
+Open existing
+.B .sqlite3
+databases at the destination and import/update only Foreign Key constraints and
+Clustered/Non-Clustered indexes from the source
+.B .mdf
+files without re-importing table rows.
+.TP
+.BR \-h ", " \-\-help
+Print a short usage summary and exit.
+.SH EXAMPLES
+Convert an entire SQL Server instance directory tree into SQLite3 databases:
+.PP
+.nf
+.RS
+cobi SQL_sample_DB/ output_sqlite/
+.RE
+.fi
+.PP
+Convert a single SQL Server
+.B .mdf
+file into a specific
+.B .sqlite3
+file:
+.PP
+.nf
+.RS
+cobi SQL_sample_DB/TestImport.mdf TestImport.mdf.sqlite3
+.RE
+.fi
+.PP
+Convert a single SQL Server
+.B .mdf
+file into an output directory:
+.PP
+.nf
+.RS
+cobi SQL_sample_DB/ output_sqlite/
+.RE
+.fi
+.PP
+Convert a directory using 8 worker threads without recursing into subdirectories:
+.PP
+.nf
+.RS
+cobi SQL_sample_DB/ output_sqlite/ --jobs 8 --no-recursive
+.RE
+.fi
+.SH EXIT STATUS
+.TP
+.B 0
+All discovered
+.B .mdf
+databases were converted successfully.
+.TP
+.B >0
+An error occurred (invalid arguments, missing source path, or one or more
+databases failed to convert).
+.SH SEE ALSO
+.BR sqlite3 (1)
+.SH AUTHORS
+Andrea Gelmini <andrea.gelmini@gelma.net>
+.SH LICENSE
+GNU General Public License v2.0 (GPL-2.0)

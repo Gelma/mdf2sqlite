@@ -1,0 +1,9 @@
+/target/
+/output_sqlite/
+/test_out/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite
+*.db
+cobi.pid
