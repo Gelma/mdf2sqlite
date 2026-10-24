@@ -4,7 +4,7 @@
 
 - Cobi translates Microsoft SQLServer `.mdf` files to SQLITE3
 - reading 'em in binary mode directly
-- no need of Microsoft engine working or installed;
+- no need for Microsoft engine working or installed;
 - it works on Linux, Windows, and macOS (Apple Silicon M-series & Intel)
 - it opens binary files in **read-only**, no writes touch your data
 - you have a dir with sample in `SQL_sample_DB/` to play with
@@ -132,42 +132,42 @@ cobi <source_dir_or_mdf> [dest_dir_or_sqlite] [--jobs N] [--no-recursive] [--ind
 #### 1. Convert a Single SQL Server Database
 Convert a specific `.mdf` file directly into a dedicated `.sqlite3` database:
 ```bash
-./target/release/cobi /data/sqlserver/Accounting.mdf /data/sqlite/Accounting.sqlite3
+./target/release/cobi SQL_sample_DB/TestImport.mdf /data/sqlite/TestImport.sqlite3
 ```
 
-Convert a single file with default output naming (creates `./Accounting.sqlite3` in the current directory):
+Convert a single file with default output naming (creates `TestImport.mdf` in the current directory):
 ```bash
-./target/release/cobi /data/sqlserver/Accounting.mdf
+./target/release/cobi SQL_sample_DB/TestImport.mdf
 ```
 
 Convert a single file into a target directory:
 ```bash
-./target/release/cobi /data/sqlserver/Accounting.mdf ./output_sqlite/
+./target/release/cobi SQL_sample_DB/TestImport.mdf ./output_sqlite/
 ```
 
 #### 2. Convert an Entire SQL Server Instance Directory
 Recursively discover and migrate all `.mdf` files across subdirectories into `./output_sqlite`, preserving directory hierarchies:
 ```bash
-./target/release/cobi "/var/opt/mssql/data" ./output_sqlite
+./target/release/cobi SQL_sample_DB/ ./output_sqlite
 ```
 
 #### 3. Control Parallel Worker Threads
 Limit execution to 4 concurrent worker threads on constrained environments:
 ```bash
-./target/release/cobi "/var/opt/mssql/data" ./output_sqlite --jobs 4
+./target/release/cobi SQL_sample_DB/ ./output_sqlite --jobs 4
 ```
 
 #### 4. Import / Refresh Indexes Only
 If you already converted tables and data and wish to extract and generate all Clustered and Non-Clustered indexes or Foreign Key constraints:
 ```bash
-./target/release/cobi "/var/opt/mssql/data" ./output_sqlite --indexes-only
+./target/release/cobi SQL_sample_DB/ ./output_sqlite --indexes-only
 ```
 
 #### 5. Background Execution Scripts
 Helper bash scripts are provided for headless/daemon runs:
 ```bash
 # Start background conversion
-./start.sh "/var/opt/mssql/data" ./output_sqlite
+./start.sh SQL_sample_DB/ ./output_sqlite
 
 # Stop a running job gracefully
 ./stop.sh
