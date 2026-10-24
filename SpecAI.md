@@ -66,12 +66,13 @@ Its primary goal is to provide complete, immediate access to **user table schema
    - **If the source is a directory**: recursively discovers all `.mdf`/`.MDF` files and converts them in parallel into the destination directory while preserving the relative subdirectory tree.
    - Migrates schemas, foreign keys, data rows, and indexes automatically by default.
 
-8. **[`build.rs`](build.rs) — Linux & Windows Cross-Compilation**:
+8. **[`build.rs`](build.rs) — Linux, Windows & macOS Multiplatform Support**:
    - On Linux, dynamically links the system `libsqlite3` (`-lsqlite3`).
+   - On macOS (`target_os == "macos"`), links the native Apple SDK SQLite3 library (`/usr/lib/libsqlite3.dylib`).
    - On Windows (`x86_64-pc-windows-gnu`), automatically compiles `sqlite3.c` via `x86_64-w64-mingw32-gcc` and links it statically into `cobi.exe`, producing a completely self-contained x86-64 PE32+ executable (requiring only standard Win32 OS DLLs: `KERNEL32.dll`, `msvcrt.dll`, `ntdll.dll`, `bcryptprimitives.dll`).
 
 9. **Documentation, README, and Man Page**:
-   - **[`README.md`](README.md)**: Comprehensive user-facing project documentation for GitHub, outlining features, architecture, installation, build steps (Linux and Windows), and CLI usage examples.
+   - **[`README.md`](README.md)**: Comprehensive user-facing project documentation for GitHub, outlining features, architecture, installation, build steps (Linux, Windows, and macOS), and CLI usage examples.
    - **[`MDF-Format.md`](MDF-Format.md)**: Complete technical specification in English of the Microsoft SQL Server binary format (`.mdf`, `.ndf`, `.ldf`, `.bak`).
    - **[`man/cobi.1`](man/cobi.1)**: Unix manual page (`roff`), viewable via `man -l man/cobi.1` or `make man`.
 
@@ -80,6 +81,7 @@ Its primary goal is to provide complete, immediate access to **user table schema
 ## 3. Build and Execution
 - **Linux Build**: `make release` (produces `target/release/cobi`).
 - **Windows Build (x86_64)**: `make windows` (produces `target/x86_64-pc-windows-gnu/release/cobi.exe`).
+- **macOS Build**: `make macos-arm64` (Apple Silicon) or `make macos-x86_64` (Intel Mac).
 - **View Man Page**: `make man` (or `man -l man/cobi.1`).
 - **Start Conversion**: `./start.sh [source_dir_or_mdf] [dest_dir_or_sqlite]`
 - **Stop Conversion**: `./stop.sh`
@@ -91,6 +93,7 @@ Its primary goal is to provide complete, immediate access to **user table schema
 - [x] Creation of `Makefile`, `start.sh`, `stop.sh`, `man/cobi.1`, `MDF-Format.md` (in English), and `.gitignore`.
 - [x] Support for both single `.mdf` file conversion and full SQL Server instance directory conversion.
 - [x] Verified cross-compilation for Windows (`target/x86_64-pc-windows-gnu/release/cobi.exe`) with statically linked `sqlite3`.
+- [x] Verified compilation support for macOS / Apple Darwin (`aarch64-apple-darwin` for Apple Silicon M-series and `x86_64-apple-darwin` for Intel Mac).
 - [x] Full verification across a complete instance directory:
   - **170 / 170 `.mdf` databases converted successfully (0 errors)** into `output_sqlite`.
   - **19,480 user tables** and **43,857,182 rows** migrated into UTF-8 SQLite3.

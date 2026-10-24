@@ -64,6 +64,9 @@ fn main() {
         }
         println!("cargo:rustc-link-search=native={}", out_dir.display());
         println!("cargo:rustc-link-lib=static=sqlite3");
+    } else if target_os == "macos" {
+        // On macOS, SQLite3 is part of the system SDK (/usr/lib/libsqlite3.dylib)
+        println!("cargo:rustc-link-lib=sqlite3");
     } else {
         println!("cargo:rustc-link-lib=sqlite3");
     }
