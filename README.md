@@ -74,7 +74,7 @@ ls -l output_sqlite/
 
 ### Build on Linux
 ```bash
-git clone https://github.com/username/cobi.git
+git clone https://github.com/Gelma/mdf2sqlite.git
 cd cobi
 make release
 ```
